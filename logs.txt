@@ -1,0 +1,14 @@
+[17.10.2018 10:11] <get_config> : err. Не существует значения attacking в таблице Configs 
+[17.10.2018 11:01] <make_an_attack> : Успешно отправлено: reciever.test1@bk.ru 
+[17.10.2018 11:02] <make_an_attack> : Успешно отправлено: reciever.test2@bk.ru 
+[17.10.2018 11:03] <make_an_attack> : Успешно отправлено: reciever.test3@bk.ru 
+[17.10.2018 11:08] <make_an_attack> : Успешно отправлено: reciever.test1@bk.ru 
+[17.10.2018 11:09] <make_an_attack> : Успешно отправлено: reciever.test2@bk.ru 
+[17.10.2018 11:10] <make_an_attack> : Успешно отправлено: reciever.test3@bk.ru 
+[17.10.2018 11:22] <make_an_attack> : Успешно отправлено: reciever.test4@bk.ru 
+[17.10.2018 11:38] <make_an_attack> : Успешно отправлено: reciever.test1@bk.ru 
+[17.10.2018 11:39] <make_an_attack> : Успешно отправлено: reciever.test2@bk.ru 
+[17.10.2018 11:41] <make_an_attack> : Успешно отправлено: reciever.test3@bk.ru 
+[17.10.2018 11:42] <make_an_attack> : Успешно отправлено: reciever.test4@bk.ru 
+[18.10.2018 07:55] <make_an_attack> : Вирус. Успешно отправлено: reciever.test1@bk.ru 
+[18.10.2018 08:01] <make_an_attack> : Успешная отправка вируса: reciever.test1@bk.ru 
