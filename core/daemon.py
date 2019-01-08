@@ -24,6 +24,10 @@ def get_config(name):
     try:
         return Configs.objects.get(name=name).value
     except Configs.DoesNotExist:
+        config = Configs()
+        config.name = name
+        config.value = "0"
+        config.save()
         logging('get_config', 'err. Не существует значения {0} в таблице Configs'.format(name))
         return '0'
 
@@ -32,7 +36,11 @@ def set_config(name, value):
     try:
         config = Configs.objects.get(name=name)
     except Configs.DoesNotExist:
-        logging('set_config', 'err. Не существует значения {0} в таблице Configs'.format(name))
+        config = Configs()
+        config.name = name
+        config.value = value
+        config.save()
+        logging('set_config', 'Создана запись {0} с значением {1} в таблице Configs'.format(name, value))
         return
     config.value = value
     config.save()

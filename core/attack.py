@@ -39,13 +39,13 @@ def make_an_attack():
             for email in stack:
                 result = ''
                 if email.method == '1':
+                    result = send_fishing(host, port, email.sender, email.sender_password, email.email, email.subject,
+                                          email.body)
+                if email.method == '2':
                     the_file = os.getcwd() + '/vir_dir/init.zip'
                     # TODO: Генерация вируса и добавление пути
                     result = send_fishing(host, port, email.sender, email.sender_password, email.email, email.subject,
                                           email.body, the_file)
-                if email.method == '2':
-                    result = send_fishing(host, port, email.sender, email.sender_password, email.email, email.subject,
-                                          email.body)
                 if email.method == '3':
                     send_fishing_with_virus()
                 stack_count -= 1
@@ -55,8 +55,7 @@ def make_an_attack():
                 else:
                     email.status = '4'
                 email.save()
-                if stack_count != 0:
-                    sleep(random.randint(30, 60))
+                sleep(random.randint(30, 180))
     except Exception as e:
         daemon.logging('make_an_attack', str(e))
     finally:
@@ -102,7 +101,7 @@ def send_fishing(host, port, sender, sender_password, email, subject, body, file
     try:
         session.sendmail(sender, email, msg.as_string().encode('utf-8'))
     except Exception as e:
-        return 'err. Ошибка: {0}, при отправке письма на почту {1} при отправке {2}'.format(str(e), email, atk_type)
+        return 'err. Ошибка при отправке {0} на почту {1}: {2}'.format(atk_type, email, str(e))
     session.quit()
     return 'Успешная отправка {0}: {1}'.format(atk_type, email)
 
