@@ -1,0 +1,18 @@
+[09.01.2019 11:19] <make_an_attack> : Успешная отправка вируса: e1dos@mail.ru 
+[09.01.2019 11:32] <make_an_attack> :  
+[09.01.2019 11:32] <make_an_attack> : string index out of range 
+[11.01.2019 12:00] <get_config> : err. Не существует значения grabbing в таблице Configs 
+[11.01.2019 15:37] <set_config> : Создана запись archives_count с значением 6 в таблице Configs 
+[13.01.2019 19:14] <get_config> : err. Не существует значения grab_management в таблице Configs 
+[13.01.2019 19:59] <set_config> : Создана запись scan_time с значением 20:00 в таблице Configs 
+[16.01.2019 03:37] <get_config> : err. Не существует значения checking_ftp в таблице Configs 
+[16.01.2019 03:37] <make_an_attack> : Успешная отправка фишинга: e1dos@mail.ru 
+[16.01.2019 04:06] <make_an_attack> : Успешная отправка фишинга: garond@mail.ru 
+[16.01.2019 04:08] <make_an_attack> : Успешная отправка фишинга: garond@mail.ru 
+[16.01.2019 04:11] <make_an_attack> : Успешная отправка фишинга: garond@mail.ru 
+[16.01.2019 18:41] <make_an_attack> : Успешная отправка фишинга: E1dos@mail.ru 
+[16.01.2019 18:42] <make_an_attack> : Успешная отправка фишинга: ftsystems@mail.ru 
+[16.01.2019 18:54] <make_an_attack> : Успешная отправка фишинга: E1dos@mail.ru 
+[16.01.2019 18:55] <make_an_attack> : Успешная отправка фишинга: ftsystems@mail.ru 
+[16.01.2019 19:08] <make_an_attack> : Успешная отправка фишинга: E1dos@mail.ru 
+[16.01.2019 19:11] <make_an_attack> : Успешная отправка фишинга: ftsystems@mail.ru 

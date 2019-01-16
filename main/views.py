@@ -1,4 +1,4 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from manager.models.Stack import Stack
 
 
@@ -17,6 +17,7 @@ def index(request):
         tmp_rec = {"email": order.email,
                    "country": order.country,
                    "description": order.description,
+                   "method": order.method,
                    "by_virus": order.by_virus,
                    "by_fishing": order.by_fishing,
                    "date_add": order.date_add,

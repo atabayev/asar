@@ -44,3 +44,18 @@ def set_config(name, value):
         return
     config.value = value
     config.save()
+
+
+def crypt(value):
+    crypted_value = value.swapcase()
+    return crypted_value
+
+
+def decrypt(value):
+    decrypted_value = value.swapcase()
+    return decrypted_value
+
+
+def reform_date(in_date):
+    tmp = in_date.strftime('%d.%m.%Y %H:%M')
+    return datetime.strptime(tmp, '%d.%m.%Y %H:%M')

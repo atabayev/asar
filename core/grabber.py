@@ -1,11 +1,11 @@
 import imaplib
 import datetime
-from datetime import timedelta
 import email
 import os
 from zipfile import ZipFile
 from threading import Thread
-from grabber.models.Emails import Emails
+from grabber.models.Emails import Emails, Zips
+from core.daemon import decrypt, reform_date, set_config, get_config
 
 
 class Grabbing(Thread):
@@ -18,30 +18,43 @@ class Grabbing(Thread):
 
 
 def grabbing():
+    if get_config('grabbing') == '1':
+        return
+    set_config('grabbing', '1')
     emails = Emails.objects.all().filter(status='1')
+    today = datetime.date.today().strftime('%d.%m.%Y')
+    directory = os.path.join('emails', today)
     for eml in emails:
-        today = datetime.date.today().strftime('%d.%m.%Y')
-        directory = os.path.join('emails', today, eml.email)
-        last_scan = datetime.datetime.strptime(eml.last_messages_datetime, '%d.%m.%Y %H:%M:%S')
-        result, last_msg_date = scan_email(eml.email, eml.password, directory, last_scan)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        last_messages_datetime = datetime.datetime.strptime(eml.last_messages_datetime, '%d.%m.%Y %H:%M')
+        result, last_msg_datetime, zips = scan_email(eml.email, decrypt(eml.password), directory, last_messages_datetime)
+        for a_zip in zips:
+            zip_file = Zips()
+            zip_file.name = os.path.basename(a_zip)
+            zip_file.path = a_zip
+            zip_file.save()
         if result == 'OK':
-            eml.last_scan_datetime = (datetime.datetime.now() + timedelta(hours=6))\
-                .strftime('%d.%m.%Y %H:%M:%S')
-            eml.last_messages_datetime = last_msg_date.strftime('%d.%m.%Y %H:%M:%S')
+            eml.last_scan_datetime = datetime.datetime.now().strftime('%d.%m.%Y %H:%M')
+            eml.last_messages_datetime = (last_msg_datetime + datetime.timedelta(hours=3)).strftime('%d.%m.%Y %H:%M')
         else:
             if result == 'PC':
-                eml.comment = 'Password changed. ' + last_msg_date.strftime('%d.%m.%Y %H:%M:%S')
+                eml.comment = 'Password changed. ' + last_msg_datetime.strftime('%d.%m.%Y %H:%M:%S')
                 eml.status = '0'
             if result == 'NI':
-                eml.comment = 'Can\' select inbox. ' + last_msg_date.strftime('%d.%m.%Y %H:%M:%S')
+                eml.comment = 'Can\' select inbox. ' + last_msg_datetime.strftime('%d.%m.%Y %H:%M:%S')
                 eml.status = '-1'
             if result == 'NA':
-                eml.comment = 'Can\' search ALL messages. ' + last_msg_date.strftime('%d.%m.%Y %H:%M:%S')
+                eml.comment = 'Can\' search ALL messages. ' + last_msg_datetime.strftime('%d.%m.%Y %H:%M:%S')
                 eml.status = '-1'
         eml.save()
+    set_config('grabbing', '0')
 
 
 def scan_email(the_email, emails_password, base_dir, last_scan_date):
+    emails_zip = []
+    dates = []
+    tmp_dir = 'tmp'
     first_time = True
     last_messages_date = last_scan_date
     try:
@@ -50,17 +63,15 @@ def scan_email(the_email, emails_password, base_dir, last_scan_date):
         return 'error connect with IMAP ' + str(e)
     try:
         result = imap_session.login(the_email, emails_password)
-    except Exception as e:
+    except:
         return 'PC', datetime.datetime.now()
     del result
     try:
         imap_session.select('INBOX')
-    except Exception as e:
+    except:
         return 'NI', datetime.datetime.now()
-
     status, data = imap_session.uid('search', 'UNSEEN')
     unseen_messages = data[0].split()
-
     status, data = imap_session.uid('search', 'ALL')
     if status != 'OK':
         return 'NA', datetime.datetime.now()
@@ -68,52 +79,93 @@ def scan_email(the_email, emails_password, base_dir, last_scan_date):
 
     for message_id in reversed(messages_id):
         attached_files = []
-        logs_name = datetime.date.today().strftime('%m%d') + '_' + \
-            message_id.decode('utf-8') + '_' + the_email
+        logs_name = datetime.date.today().strftime('%m%d') + '_' + message_id.decode('utf-8') + '_' + the_email
         status, data = imap_session.uid('fetch', message_id, '(RFC822)')
         if status != 'OK':
             continue
-
         message = email.message_from_bytes(data[0][1])
-        messages_date = email.utils.parsedate_to_datetime(message['date'][0:-6])
+        messages_time_zone = message['date'][26:len(message['date'])]
+        if message['date'][6] == ' ':
+            messages_time_zone = message['date'][25:len(message['date'])]
+        time_zone = 3
+        if messages_time_zone[2] == 'T' or messages_time_zone[2] == '0':
+            time_zone = 6
+        if messages_time_zone[2] == '6':
+            time_zone = 0
+        messages_date = reform_date(email.utils.parsedate_to_datetime(message['date'])) + \
+                        datetime.timedelta(hours=time_zone)
+        dates.append(message['date'] + ' ' + str(time_zone) + ' ' + messages_date.strftime('%d.%m.%Y %H:%M'))
         if first_time:
             last_messages_date = messages_date
             first_time = False
-
         if messages_date < last_scan_date:
             break
-
         subject = ''
         body_txt = ''
         body_html = ''
-        if message['from'][0:7] == '=?UTF-8':
-            email_from_part_1 = email.header.decode_header(message['from'])[0][0].decode('utf-8')
-            email_from_part_2 = email.header.decode_header(message['from'])[1][0].decode('utf-8')
-        else:
-            email_from_part_1 = message['from']
-            email_from_part_2 = ''
-
-        if message.is_multipart():
+        email_from = ''
+        email_to = ''
+        email_cc = ''
+        if 'from' in message:
+            if message['From'][0:7] == '=?UTF-8':
+                tmp = email.header.decode_header(message['From'])
+                for i in range(1, len(tmp), 2):
+                    email_from = email_from + email.header.decode_header(message['From'])[i - 1][0].decode('utf-8') + \
+                                 email.header.decode_header(message['From'])[i][0].decode('utf-8') + ' '
+            else:
+                email_from = message['From']
+                # tmp = email.header.decode_header(message['from'])
+                # for i in range(0, len(tmp), 2):
+                #     email_from = message['from']
+        if 'To' in message:
+            if message['To'][0:7] == '=?UTF-8':
+                tmp = email.header.decode_header(message['To'])
+                for i in range(1, len(tmp), 2):
+                    email_to = email_to + email.header.decode_header(message['To'])[i - 1][0].decode('utf-8') + \
+                               email.header.decode_header(message['To'])[i][0].decode('utf-8') + ' '
+            else:
+                email_to = message['To']
+                # tmp = message['To']
+                # for i in range(1, len(tmp), 2):
+                #     email_to = message['To']
+        if 'Cc' in message:
+            if message['Cc'][0:7] == '=?UTF-8':
+                tmp = email.header.decode_header(message['Cc'])
+                for i in range(1, len(tmp), 2):
+                    email_cc = email_cc + email.header.decode_header(message['Cc'])[i - 1][0].decode('utf-8') + \
+                               email.header.decode_header(message['Cc'])[i][0].decode('utf-8') + ' '
+            else:
+                email_cc = message['Cc']
+                # tmp = email.header.decode_header(message['Cc'])
+                # for i in range(1, len(tmp), 2):
+                #     email_cc = message['Cc']
+        if 'Subject' in message:
             subject = message['Subject']
-            if message['Subject'][0:7] == '=?UTF-8':
+            if message['Subject'][0:7].upper() == '=?UTF-8':
                 subject = email.header.decode_header(message['Subject'])[0][0].decode('utf-8')
+        if message.is_multipart():
             for part in message.walk():
                 if part.get_content_type() == 'text/plain' and not part.get_filename():
                     body_txt = part.get_payload(decode=True)
-                    body_txt = body_txt.decode('utf-8')
-                    if not os.path.exists(base_dir):
-                        os.makedirs(base_dir)
+                    try:
+                        body_txt = body_txt.decode('utf-8')
+                    except UnicodeDecodeError:
+                        body_txt = 'Ошибка кодировки'
                 if part.get_content_type() == 'text/html':
                     body_html = part.get_payload(decode=True)
-                    body_html = body_html.decode('utf-8')
-                    if not os.path.exists(base_dir):
-                        os.makedirs(base_dir)
+                    try:
+                        body_html = body_html.decode('utf-8')
+                    except UnicodeDecodeError:
+                        body_txt = 'Ошибка кодировки'
                 if part.get_filename():
-                    file_name = email.header.decode_header(part.get_filename())[0][0].decode(
-                        'utf-8')
-                    if not os.path.exists(base_dir):
-                        os.makedirs(base_dir)
-                    attach = os.path.join(base_dir, subject + '_' + file_name)
+                    file_name = email.header.decode_header(part.get_filename())[0][0]
+                    try:
+                        file_name = file_name.decode('utf-8')
+                    except AttributeError:
+                        file_name = email.header.decode_header(part.get_filename())[0][0]
+                    if not os.path.exists(tmp_dir):
+                        os.makedirs(tmp_dir)
+                    attach = os.path.join(tmp_dir, file_name)
                     with open(attach, 'wb') as fl:
                         fl.write(part.get_payload(decode=True))
                     fl.close()
@@ -121,27 +173,35 @@ def scan_email(the_email, emails_password, base_dir, last_scan_date):
         body = body_txt
         if body_txt == '':
             body = body_html
+        for_cc = ''
+        if email_cc != '':
+            for_cc = '\nКопия: ' + email_cc
         text_for_log = """
-Письмо от: {0} {1}
-Тема письма:  {2}            
-            
+Письмо от: {0}
+Кому: {1} {2}
+Тема письма:  {3}            
+
 Текст письма:
-================================================================
-{3}
-================================================================
-        """.format(email_from_part_1, email_from_part_2, subject, body)
-        with open(os.path.join(base_dir, logs_name + '.txt'), 'w') as fl:
+----------------------------------------------------------------
+{4}
+----------------------------------------------------------------
+        """.format(email_from, email_to, for_cc, subject, body)
+        with open(os.path.join(tmp_dir, logs_name + '.txt'), 'w', encoding='utf8') as fl:
             fl.write(text_for_log)
         fl.close()
         with ZipFile(os.path.join(base_dir, logs_name + '.zip'), 'w') as zf:
             for att in attached_files:
                 zf.write(att, os.path.basename(att))
-            zf.write(os.path.join(base_dir, logs_name + '.txt'), logs_name + '.txt')
+            zf.write(os.path.join(tmp_dir, logs_name + '.txt'), logs_name + '.txt')
         zf.close()
+        emails_zip.append(os.path.join(base_dir, logs_name + '.zip'))
         if message_id in unseen_messages:
             imap_session.uid('store', message_id, '-FLAGS', '\Seen')
         for att in attached_files:
             os.remove(att)
-        os.remove(os.path.join(base_dir, logs_name + '.txt'))
+        os.remove(os.path.join(tmp_dir, logs_name + '.txt'))
     imap_session.close()
-    return 'OK', last_messages_date
+    with open('times.txt', 'w', encoding='utf-8') as fl:
+        fl.write("\n".join(dates))
+    fl.close()
+    return 'OK', last_messages_date, emails_zip
