@@ -4,7 +4,7 @@ from main import views
 app_name = 'main'
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('1/', views.change, name='change'),
+    path('all/', views.all_records, name='all'),
+    path('new/', views.new_record, name='new'),
 ]
 

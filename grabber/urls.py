@@ -4,7 +4,6 @@ from grabber import views
 app_name = 'grabber'
 
 urlpatterns = [
-    path('', views.grab, name='grab'),
     path('get_emails/', views.get_emails, name='get_emails'),
     path('add_email/', views.add_email, name='add_email'),
     path('delete_email/', views.delete_email, name='delete_email'),

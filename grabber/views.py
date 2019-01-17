@@ -13,12 +13,6 @@ from grabber.models.Emails import Emails, Zips
 """
 
 
-def grab(request):
-    grabber = Grabbing()
-    grabber.start()
-    return HttpResponse('Grab started!')
-
-
 def get_emails(request):
     if "token" not in request.GET:
         return JsonResponse({"response": "token error"})
