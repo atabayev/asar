@@ -12,5 +12,7 @@ urlpatterns = [
     path('set_scan_time/', views.set_scan_time, name='set_scan_time'),
     path('get_dirs/', views.get_dirs, name='get_dirs'),
     path('clear_zips_table/', views.clear_zips_table, name='clear_zips_table'),
+    path('grab/', views.grab, name='grab'),
+
 ]
 

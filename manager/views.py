@@ -3,8 +3,9 @@ from django.http import JsonResponse
 from core.attack import Attacking
 from .models.Stack import Stack
 from .models.Templates import Templates
-from core.daemon import get_config
+from core.daemon import get_config, personal_logging, logging
 from core.checker import CheckFtp
+from users.models.Users import Users
 
 """выполняет управление процессом атак:
 добавляет, редактирует, удаляет
@@ -13,12 +14,17 @@ from core.checker import CheckFtp
 
 
 def add_to_stack(request):
-    if 'token' not in request.POST:
-        return JsonResponse({'response': 'no token'})
-    if 'emails' not in request.POST or 'sender' not in request.POST or 'sender_password' not in request.POST or \
-            'subject' not in request.POST or 'body_name' not in request.POST or 'method' not in request.POST or \
-            'country' not in request.POST or 'description' not in request.POST:
-        return JsonResponse({'response': 'no actual fields'})
+    if 'username' not in request.POST or 'token' not in request.POST or 'emails' not in request.POST or \
+            'sender' not in request.POST or 'sender_password' not in request.POST or 'subject' not in request.POST or \
+            'body_name' not in request.POST or 'method' not in request.POST or 'country' not in request.POST or \
+            'description' not in request.POST:
+        return JsonResponse({'response': 'field error'})
+    try:
+        the_user = Users.objects.get(username=request.POST['username'])
+    except Users.DoesNotExist:
+        return JsonResponse({'response': 'denied'})
+    if request.POST['token'] != the_user.token:
+        return JsonResponse({"response": "denied"})
     email_count = 0
     emls = request.POST['emails']
     emails = emls.split(",")
@@ -32,7 +38,7 @@ def add_to_stack(request):
         try:
             new_stack.body = Templates.objects.get(name=request.POST['body_name']).body
         except Templates.DoesNotExist:
-            new_stack.body = ''
+            new_stack.body = request.POST['body_name']
         new_stack.method = request.POST['method']
         new_stack.date_add = date.today()
         new_stack.country = request.POST['country']
@@ -40,8 +46,10 @@ def add_to_stack(request):
         new_stack.ftp_host = request.POST['host']
         new_stack.ftp_login = request.POST['user']
         new_stack.ftp_password = request.POST['pswd']
+        new_stack.who_hacked = request.POST['username']
         new_stack.status = '0'
         new_stack.save()
+        personal_logging(the_user.log_file, 'New attacking :' + email)
         del new_stack
     if email_count > 0:
         if get_config('attacking') == '0':
@@ -50,75 +58,54 @@ def add_to_stack(request):
         if get_config('checking_ftp') == '0':
             check = CheckFtp()
             check.start()
-    return JsonResponse({'response': 'add: ' + str(email_count) + ' emails'})
+    logging('add_to_stack', '{0} added emails to stack.'.format(the_user.username))
+    return JsonResponse({'response': 'ok', 'emails_add': email_count})
 
 
-def edit_from_stack(request):
-    if 'emails' not in request.POST or 'sender' not in request.POST or 'sender_password' not in request.POST or \
-            'subject' not in request.POST or 'body_name' not in request.POST or 'method' not in request.POST or \
-            'country' not in request.POST or 'description' not in request.POST:
-        return JsonResponse({'response': 'no actual fields'})
-    try:
-        new_stack = Stack.objects.get(email=request.POST['email'])
-    except Stack.DoesNotExist:
-        return JsonResponse({"response": "not_exist"})
-    new_stack.sender = request.POST['sender']
-    new_stack.sender_password = request.POST['sender_password']
-    new_stack.email = request.POST['email']
-    new_stack.subject = request.POST['subject']
-    try:
-        new_stack.body = Templates.objects.get(name=request.POST['body_name']).body
-    except Templates.DoesNotExist:
-        new_stack.body = ''
-    new_stack.method = request.POST['method']
-    new_stack.country = request.POST['country']
-    new_stack.description = request.POST['description']
-    new_stack.status = '0'
-    new_stack.save()
-    return JsonResponse({"response": "ok"})
-
-
-def delete_from_stack(request):
-    if 'emails' not in request.POST or 'sender' not in request.POST or 'sender_password' not in request.POST or \
-            'subject' not in request.POST or 'body' not in request.POST or 'method' not in request.POST or \
-            'country' not in request.POST or 'description' not in request.POST:
-        return JsonResponse({'response': 'no actual fields'})
-    try:
-        new_stack = Stack.objects.get(email=request.POST['email'])
-    except Stack.DoesNotExist:
-        return JsonResponse({"response": "not_exist"})
-    new_stack.delete()
-    return JsonResponse({"response": "ok"})
-
-
+# TODO: доделать, пока хз что делает
 def get_info_about_target(request):
-    if 'token' not in request.GET and 'email' not in request.GET:
+    if 'username' not in request.GET or 'token' not in request.GET or 'email' not in request.GET:
         return JsonResponse({'response': 'filed error'})
-    if request.GET['token'] != '111':
+    try:
+        the_user = Users.objects.get(username=request.GET['username'])
+    except Users.DoesNotExist:
         return JsonResponse({'response': 'denied'})
+    if request.GET['token'] != the_user.token:
+        return JsonResponse({"response": "denied"})
     eml = Stack.objects.get()
     return ''
 
 
 def load_template(request):
-    if 'token' not in request.POST and 'name' not in request.POST and 'description' not in request.POST and \
-            'template' not in request.POST:
+    if 'username' not in request.POST or 'token' not in request.POST or 'name' not in request.POST or \
+            'description' not in request.POST or 'template' not in request.POST:
         return JsonResponse({'response': 'filed error'})
-    if request.POST['token'] != '111':
+    try:
+        the_user = Users.objects.get(username=request.POST['username'])
+    except Users.DoesNotExist:
         return JsonResponse({'response': 'denied'})
+    if request.POST['token'] != the_user.token:
+        return JsonResponse({"response": "denied"})
     template = Templates()
     template.name = request.POST['name']
     template.body = request.POST['template']
     template.description = request.POST['description']
+    template.owner = request.POST['username']
     template.save()
+    personal_logging(the_user.log_file, 'Add template: {0}'.format(request.POST['name']))
+    logging('add_to_stack', '{0} added template {1} to templates.'.format(the_user.username, request.POST['name']))
     return JsonResponse({"response": "ok"})
 
 
 def get_templates(request):
-    if 'token' not in request.GET:
+    if 'username' not in request.GET or 'token' not in request.GET:
         return JsonResponse({'response': 'filed error'})
-    if request.GET['token'] != '111':
+    try:
+        the_user = Users.objects.get(username=request.GET['username'])
+    except Users.DoesNotExist:
         return JsonResponse({'response': 'denied'})
+    if request.GET['token'] != the_user.token:
+        return JsonResponse({"response": "denied"})
     try:
         templates = Templates.objects.all()
     except Templates.DoesNotExist:

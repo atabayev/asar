@@ -5,7 +5,11 @@ import os
 from zipfile import ZipFile
 from threading import Thread
 from grabber.models.Emails import Emails, Zips
-from core.daemon import decrypt, reform_date, set_config, get_config
+from core.daemon import decrypt, reform_date, set_config, get_config, check_ip
+
+'''
+    Скачивает письма и создает архив по формату.
+'''
 
 
 class Grabbing(Thread):
@@ -28,7 +32,10 @@ def grabbing():
         if not os.path.exists(directory):
             os.makedirs(directory)
         last_messages_datetime = datetime.datetime.strptime(eml.last_messages_datetime, '%d.%m.%Y %H:%M')
-        result, last_msg_datetime, zips = scan_email(eml.email, decrypt(eml.password), directory, last_messages_datetime)
+        if not check_ip():
+            set_config('grabbing', '0')
+            continue
+        result, last_msg_dt, zips = scan_email(eml.email, decrypt(eml.password), directory, last_messages_datetime)
         for a_zip in zips:
             zip_file = Zips()
             zip_file.name = os.path.basename(a_zip)
@@ -36,16 +43,16 @@ def grabbing():
             zip_file.save()
         if result == 'OK':
             eml.last_scan_datetime = datetime.datetime.now().strftime('%d.%m.%Y %H:%M')
-            eml.last_messages_datetime = (last_msg_datetime + datetime.timedelta(hours=3)).strftime('%d.%m.%Y %H:%M')
+            eml.last_messages_datetime = (last_msg_dt + datetime.timedelta(hours=3)).strftime('%d.%m.%Y %H:%M')
         else:
             if result == 'PC':
-                eml.comment = 'Password changed. ' + last_msg_datetime.strftime('%d.%m.%Y %H:%M:%S')
+                eml.comment = 'Password changed. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
                 eml.status = '0'
             if result == 'NI':
-                eml.comment = 'Can\' select inbox. ' + last_msg_datetime.strftime('%d.%m.%Y %H:%M:%S')
+                eml.comment = 'Can\' select inbox. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
                 eml.status = '-1'
             if result == 'NA':
-                eml.comment = 'Can\' search ALL messages. ' + last_msg_datetime.strftime('%d.%m.%Y %H:%M:%S')
+                eml.comment = 'Can\' search ALL messages. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
                 eml.status = '-1'
         eml.save()
     set_config('grabbing', '0')
@@ -84,14 +91,14 @@ def scan_email(the_email, emails_password, base_dir, last_scan_date):
         if status != 'OK':
             continue
         message = email.message_from_bytes(data[0][1])
-        messages_time_zone = message['date'][26:len(message['date'])]
-        if message['date'][6] == ' ':
-            messages_time_zone = message['date'][25:len(message['date'])]
-        time_zone = 3
-        if messages_time_zone[2] == 'T' or messages_time_zone[2] == '0':
+        dt_list = message['date'].split(' ')
+        messages_time_zone = dt_list[len(dt_list) - 1]
+        if messages_time_zone[2] == 'T':
             time_zone = 6
-        if messages_time_zone[2] == '6':
-            time_zone = 0
+        elif messages_time_zone[2] == 'S':
+            time_zone = 3
+        else:
+            time_zone = 6 - int(messages_time_zone[2])
         messages_date = reform_date(email.utils.parsedate_to_datetime(message['date'])) + \
                         datetime.timedelta(hours=time_zone)
         dates.append(message['date'] + ' ' + str(time_zone) + ' ' + messages_date.strftime('%d.%m.%Y %H:%M'))

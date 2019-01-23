@@ -14,3 +14,10 @@ class Emails(models.Model):
 class Zips(models.Model):
     name = models.CharField(max_length=100, default='')
     path = models.CharField(max_length=200, default='')
+
+
+class EmailConfigs(models.Model):
+    name = models.CharField(max_length=10, default='')
+    host = models.CharField(max_length=20, default='')
+    port = models.CharField(max_length=10, default='')
+    description = models.CharField(max_length=100, default='')

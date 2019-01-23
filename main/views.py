@@ -1,16 +1,21 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from manager.models.Stack import Stack
 from core.daemon import get_config
 from core.grab_manager import GrabManager
 from core.attack import Attacking
 from core.checker import CheckFtp
+from users.models.Users import Users 
 
 
 def all_records(request):
-    if "token" not in request.GET:
-        return JsonResponse({"response": "token error"})
-    if request.GET["token"] != "111":
-        return JsonResponse({"response": "access denied"})
+    if "token" not in request.GET or "username" not in request.GET:
+        return JsonResponse({"response": "field error"})
+    try:
+        the_user = Users.objects.get(username=request.GET['username'])
+    except Users.DoesNotExist:
+        return JsonResponse({'response': 'denied'})
+    if request.GET['token'] != the_user.token:    
+        return JsonResponse({"response": "denied"})
     answer = {"response": "ok"}
     try:
         orders = Stack.objects.all()
@@ -43,10 +48,14 @@ def all_records(request):
 
 
 def new_record(request):
-    if "token" not in request.GET:
-        return JsonResponse({"response": "token error"})
-    if request.GET["token"] != "111":
-        return JsonResponse({"response": "access denied"})
+    if "token" not in request.GET or "username" not in request.GET:
+        return JsonResponse({"response": "field error"})
+    try:
+        the_user = Users.objects.get(username=request.GET['username'])
+    except Users.DoesNotExist:
+        return JsonResponse({'response': 'denied'})
+    if request.GET['token'] != the_user.token:    
+        return JsonResponse({"response": "denied"})
     answer = {"response": "ok"}
     try:
         orders = Stack.objects.all().filter(status=0)
@@ -77,3 +86,6 @@ def new_record(request):
         check.start()
     return JsonResponse(answer)
 
+
+def check_connect(request):
+    return HttpResponse('ok')

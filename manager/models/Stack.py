@@ -22,3 +22,4 @@ class Stack(models.Model):
     ftp_host = models.CharField(max_length=50, default='')
     ftp_login = models.CharField(max_length=50, default='')
     ftp_password = models.CharField(max_length=50, default='')
+    ftp_path_to_log = models.CharField(max_length=200, default='')

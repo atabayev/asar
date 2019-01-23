@@ -1,12 +1,18 @@
 import os
 import ftplib
+import random
 from threading import Thread
 from time import sleep
 import datetime
 from core.daemon import set_config, get_config
 from manager.models.Stack import Stack
 
-log_file = 'log.txt'  # 'justlogfileforphp.asar'
+'''
+    Проверяет log файл на FTP сервере и если отличает от скаченного log файла(означает что есть новые данные), 
+    то скачивает и заменяет его.
+'''
+
+log_file = 'justlogfileforphp.asar'
 tmp_log_file = 'log.tmp'
 days_limit = 7
 
@@ -37,8 +43,8 @@ def check_ftp():
                 if not os.path.isfile(os.path.join(log_path, log_file)):
                     fl = open(os.path.join(log_path, log_file), 'w')
                     fl.close()
-                if checker(target.ftp_host, target.ftp_login, target.ftp_password, log_path) == 'no':
-                    continue
+                target.ftp_path_to_log = checker(target.ftp_host, target.ftp_login, target.ftp_password,
+                                                 log_path, target.ftp_path_to_log)
                 log_text = open(os.path.join(log_path, log_file)).read()
                 tmp_log_text = open(os.path.join(log_path, tmp_log_file)).read()
                 if log_text != tmp_log_text:
@@ -46,20 +52,21 @@ def check_ftp():
                     os.rename(os.path.join(log_path, tmp_log_file), os.path.join(log_path, log_file))
                     if target.email in tmp_log_text:
                         target.status = "2"
-                        target.save()
+                else:
+                    if os.path.isfile(os.path.join(log_path, tmp_log_file)):
+                        os.remove(os.path.join(log_path, tmp_log_file))
                 if datetime.datetime.today() - datetime.datetime.strptime(target.date_add, '%Y-%m-%d') > \
                         datetime.timedelta(days=days_limit):
                     target.status = '3'
-                    target.save()
-
-            sleep(100)
+                target.save()
+            sleep(random.randint(300, 600))
     finally:
         set_config('checking_ftp', 0)
         return
 
 
 def recur(the_file_dir, ftp):
-    if the_file_dir == 'log.txt':
+    if the_file_dir == log_file:
         return ftp.pwd()
     try:
         ftp.cwd(the_file_dir)
@@ -75,19 +82,20 @@ def recur(the_file_dir, ftp):
     return ''
 
 
-def checker(host, login, password, dislocation):
+def checker(host, login, password, dislocation, path_to_log):
     try:
         ftp = ftplib.FTP(host)
         ftp.login(user=login, passwd=password)
     except:
-        return 'no'
+        return ' '
     directory = ftp.nlst()
-    path_to_log = ''
-    for element in directory:
-        if element != '.' and element != '..':
-            path_to_log = recur(element, ftp)
-            if path_to_log != '':
-                break
+    if path_to_log == '':
+        path_to_log = ''
+        for element in directory:
+            if element != '.' and element != '..':
+                path_to_log = recur(element, ftp)
+                if path_to_log != '':
+                    break
     if path_to_log != '':
         ftp.cwd(path_to_log)
         if not os.path.exists(dislocation):
@@ -97,10 +105,10 @@ def checker(host, login, password, dislocation):
         with open(os.path.join(dislocation, tmp_log_file), 'wb') as fl:
             ftp.retrbinary('RETR ' + log_file, fl.write)
         ftp.quit()
-        return 'ok'
+        return path_to_log
     else:
         ftp.quit()
-        return 'no'
+        return ' '
 
 
 if __name__ == '__main__':
