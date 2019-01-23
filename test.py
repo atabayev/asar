@@ -1,11 +1,5 @@
-import os, os.path
+from manager.models.Stack import Stack
 
-
-def count_files(dir):
-    return len([name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))])
-
-    # path joining version for other paths
-
-
-if __name__ == '__main__':
-    count_files('')
+stack = Stack.objects.filter(status=1).distinct()
+for st in stack:
+    print(st.email)
