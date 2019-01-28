@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from core.attack import Attacking
 from .models.Stack import Stack
 from .models.Templates import Templates
-from .models.Configs import VpnFiles
+#from .models.Configs import VpnFiles
 from core.daemon import get_config, personal_logging, logging
 from core.checker import CheckFtp
 from users.models.Users import Users
@@ -129,16 +129,17 @@ def get_templates(request):
 
 
 def add_vpn_to_bd(request):
-    vpn_files = os.listdir('nord_vpn')
-    for fl in vpn_files:
-        if not VpnFiles.objects.filter(name=fl).exists():
-            vpn = VpnFiles()
-            vpn.name = fl
-            vpn.path = os.path.join('nord_vpn', fl)
-            vpn.save()
-            del vpn
-            print('add')
-    return JsonResponse({"response": "ok"})
+    pass
+#    vpn_files = os.listdir('nord_vpn')
+#    for fl in vpn_files:
+#        if not VpnFiles.objects.filter(name=fl).exists():
+#            vpn = VpnFiles()
+#            vpn.name = fl
+#            vpn.path = os.path.join('nord_vpn', fl)
+#            vpn.save()
+#            del vpn
+#            print('add')
+#    return JsonResponse({"response": "ok"})
 
 
 def check_ip(request):
