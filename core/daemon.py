@@ -101,6 +101,7 @@ def check_ip():
         return result
     else:
         result = False
+        os.rem
         # try:
         #     config_files = os.listdir('VPN_configs')
         # except FileNotFoundError:
