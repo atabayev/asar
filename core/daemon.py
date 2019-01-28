@@ -97,20 +97,25 @@ def check_ip():
     result = True
     if json.loads(requests.get('https://www.iplocate.io/api/lookup/' +
                                requests.get('https://api.ipify.org').text).text)['country_code'] == 'KZ':
+        set_config('status', '1')
         return result
     else:
         result = False
-        try:
-            config_files = os.listdir('VPN_configs')
-        except FileNotFoundError:
-            logging('check_ip', 'Нет файлов конфигураций для VPN')
-            return False
-        for config_file in config_files:
-            script = 'openvpn --configure {0}'.format(config_file)
+        # try:
+        #     config_files = os.listdir('VPN_configs')
+        # except FileNotFoundError:
+        #     logging('check_ip', 'Нет файлов конфигураций для VPN')
+        #     return False
+        # for config_file in config_files:
+        #     script = 'openvpn --configure {0}'.format(config_file)
+        #     os.system("bash -c '%s'" % script)
+        script = 'nordvpn c'
+        for i in range(3):
             os.system("bash -c '%s'" % script)
             sleep(15)
             if json.loads(requests.get('https://www.iplocate.io/api/lookup/' +
                                        requests.get('https://api.ipify.org').text).text)['country_code'] == 'KZ':
                 result = True
+                set_config('status', '0')
                 break
         return result
