@@ -1,3 +1,4 @@
+from time import sleep
 import imaplib
 import datetime
 import email
@@ -5,7 +6,7 @@ import os
 from zipfile import ZipFile
 from threading import Thread
 from grabber.models.Emails import Emails, Zips
-from core.daemon import decrypt, reform_date, set_config, get_config, check_ip
+from core.daemon import decrypt, reform_date, set_config, get_config
 
 '''
     Скачивает письма и создает архив по формату.
@@ -18,44 +19,45 @@ class Grabbing(Thread):
         Thread.__init__(self)
 
     def run(self):
-        grabbing()
-
-
-def grabbing():
-    if get_config('grabbing') == '1':
-        return
-    set_config('grabbing', '1')
-    emails = Emails.objects.all().filter(status='1')
-    today = datetime.date.today().strftime('%d.%m.%Y')
-    directory = os.path.join('emails', today)
-    for eml in emails:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        last_messages_datetime = datetime.datetime.strptime(eml.last_messages_datetime, '%d.%m.%Y %H:%M')
-        if not check_ip():
-            set_config('grabbing', '0')
-            continue
-        result, last_msg_dt, zips = scan_email(eml.email, decrypt(eml.password), directory, last_messages_datetime)
-        for a_zip in zips:
-            zip_file = Zips()
-            zip_file.name = os.path.basename(a_zip)
-            zip_file.path = a_zip
-            zip_file.save()
-        if result == 'OK':
-            eml.last_scan_datetime = datetime.datetime.now().strftime('%d.%m.%Y %H:%M')
-            eml.last_messages_datetime = (last_msg_dt + datetime.timedelta(hours=3)).strftime('%d.%m.%Y %H:%M')
-        else:
-            if result == 'PC':
-                eml.comment = 'Password changed. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
-                eml.status = '0'
-            if result == 'NI':
-                eml.comment = 'Can\' select inbox. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
-                eml.status = '-1'
-            if result == 'NA':
-                eml.comment = 'Can\' search ALL messages. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
-                eml.status = '-1'
-        eml.save()
-    set_config('grabbing', '0')
+        if get_config('grabbing') == '1':
+            return
+        set_config('grabbing', '1')
+        while True:
+            if get_config('vpn') == '1':
+                break
+            else:
+                sleep(60)
+        emails = Emails.objects.all().filter(status='1')
+        today = datetime.date.today().strftime('%d.%m.%Y')
+        directory = os.path.join('emails', today)
+        for eml in emails:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            last_messages_datetime = datetime.datetime.strptime(eml.last_messages_datetime, '%d.%m.%Y %H:%M')
+            if not check_ip():
+                set_config('grabbing', '0')
+                continue
+            result, last_msg_dt, zips = scan_email(eml.email, decrypt(eml.password), directory, last_messages_datetime)
+            for a_zip in zips:
+                zip_file = Zips()
+                zip_file.name = os.path.basename(a_zip)
+                zip_file.path = a_zip
+                zip_file.save()
+            if result == 'OK':
+                eml.last_scan_datetime = datetime.datetime.now().strftime('%d.%m.%Y %H:%M')
+                eml.last_messages_datetime = (last_msg_dt + datetime.timedelta(hours=3)).strftime('%d.%m.%Y %H:%M')
+            else:
+                if result == 'PC':
+                    eml.comment = 'Password changed. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
+                    eml.status = '0'
+                if result == 'NI':
+                    eml.comment = 'Can\' select inbox. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
+                    eml.status = '-1'
+                if result == 'NA':
+                    eml.comment = 'Can\' search ALL messages. ' + last_msg_dt.strftime('%d.%m.%Y %H:%M:%S')
+                    eml.status = '-1'
+            eml.save()
+        set_config('grabbing', '0')
 
 
 def scan_email(the_email, emails_password, base_dir, last_scan_date):

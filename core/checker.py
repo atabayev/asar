@@ -4,7 +4,7 @@ import random
 from threading import Thread
 from time import sleep
 import datetime
-from core.daemon import set_config, get_config
+from core.daemon import set_config, get_config, logging
 from manager.models.Stack import Stack
 
 '''
@@ -23,46 +23,51 @@ class CheckFtp(Thread):
         Thread.__init__(self)
 
     def run(self):
-        check_ftp()
-
-
-def check_ftp():
-    if get_config('checking_ftp') == '1':
-        return
-    try:
+        if get_config('checking_ftp') == '1':
+            return
         set_config('checking_ftp', 1)
-        while True:
-            try:
-                stack = Stack.objects.all().filter(status=1)
-            except Stack.DoesNotExist:
-                continue
-            for target in stack:
-                log_path = os.path.join('logs_ftp', target.ftp_host)
-                if not os.path.exists(log_path):
-                    os.makedirs(log_path)
-                if not os.path.isfile(os.path.join(log_path, log_file)):
-                    fl = open(os.path.join(log_path, log_file), 'w')
-                    fl.close()
-                target.ftp_path_to_log = checker(target.ftp_host, target.ftp_login, target.ftp_password,
-                                                 log_path, target.ftp_path_to_log)
-                log_text = open(os.path.join(log_path, log_file)).read()
-                tmp_log_text = open(os.path.join(log_path, tmp_log_file)).read()
-                if log_text != tmp_log_text:
-                    os.remove(os.path.join(log_path, log_file))
-                    os.rename(os.path.join(log_path, tmp_log_file), os.path.join(log_path, log_file))
-                    if target.email in tmp_log_text:
-                        target.status = "2"
-                else:
-                    if os.path.isfile(os.path.join(log_path, tmp_log_file)):
-                        os.remove(os.path.join(log_path, tmp_log_file))
-                if datetime.datetime.today() - datetime.datetime.strptime(target.date_add, '%Y-%m-%d') > \
-                        datetime.timedelta(days=days_limit):
-                    target.status = '3'
-                target.save()
-            sleep(random.randint(300, 600))
-    finally:
-        set_config('checking_ftp', 0)
-        return
+        logging('check_ftp', 'START')
+        try:
+            while True:
+                logging('check_ftp', 'while True:')
+                while True:
+                    if get_config('vpn') == '1':
+                        break
+                    else:
+                        logging('check_ftp', 'not check_ip()')
+                        sleep(60)
+                try:
+                    stack = Stack.objects.all().filter(status=1)
+                except Stack.DoesNotExist:
+                    continue
+                for target in stack:
+                    logging('CheckFtp', target.email)
+                    log_path = os.path.join('logs_ftp', target.ftp_host)
+                    if not os.path.exists(log_path):
+                        os.makedirs(log_path)
+                    if not os.path.isfile(os.path.join(log_path, log_file)):
+                        fl = open(os.path.join(log_path, log_file), 'w')
+                        fl.close()
+                    target.ftp_path_to_log = checker(target.ftp_host, target.ftp_login, target.ftp_password,
+                                                     log_path, target.ftp_path_to_log)
+                    log_text = open(os.path.join(log_path, log_file)).read()
+                    tmp_log_text = open(os.path.join(log_path, tmp_log_file)).read()
+                    if log_text != tmp_log_text:
+                        os.remove(os.path.join(log_path, log_file))
+                        os.rename(os.path.join(log_path, tmp_log_file), os.path.join(log_path, log_file))
+                        if target.email in tmp_log_text:
+                            target.status = "2"
+                    else:
+                        if os.path.isfile(os.path.join(log_path, tmp_log_file)):
+                            os.remove(os.path.join(log_path, tmp_log_file))
+                    if datetime.datetime.today() - datetime.datetime.strptime(target.date_add, '%Y-%m-%d') > \
+                            datetime.timedelta(days=days_limit):
+                        target.status = '3'
+                    target.save()
+                sleep(random.randint(300, 600))
+        finally:
+            set_config('checking_ftp', 0)
+            return
 
 
 def recur(the_file_dir, ftp):

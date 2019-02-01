@@ -1,10 +1,9 @@
 from django.http import JsonResponse, HttpResponse
 from manager.models.Stack import Stack
-from core.daemon import get_config
-from core.grab_manager import GrabManager
-from core.attack import Attacking
-from core.checker import CheckFtp
-from users.models.Users import Users 
+from core.daemon import logging
+from core.start_daemons import StartDaemons
+from core.tester import Tester
+from users.models.Users import Users
 
 
 def all_records(request):
@@ -14,7 +13,7 @@ def all_records(request):
         the_user = Users.objects.get(username=request.GET['username'])
     except Users.DoesNotExist:
         return JsonResponse({'response': 'denied'})
-    if request.GET['token'] != the_user.token:    
+    if request.GET['token'] != the_user.token:
         return JsonResponse({"response": "denied"})
     answer = {"response": "ok"}
     try:
@@ -35,16 +34,21 @@ def all_records(request):
                    "status": order.status}
         records.append(tmp_rec)
     answer["orders"] = records
-    if get_config('grab_management') == '0':
-        grab_manager = GrabManager()
-        grab_manager.start()
-    if get_config('attacking') == '0':
-        atk = Attacking()
-        atk.start()
-    if get_config('checking_ftp') == '0':
-        check = CheckFtp()
-        check.start()
     return JsonResponse(answer)
+
+
+def start_daemons(request):
+    if "token" not in request.POST or "username" not in request.POST:
+        return JsonResponse({"response": "field error"})
+    try:
+        the_user = Users.objects.get(username=request.POST['username'])
+    except Users.DoesNotExist:
+        return JsonResponse({'response': 'denied'})
+    if request.POST['token'] != the_user.token:
+        return JsonResponse({"response": "denied"})
+    daemons = StartDaemons()
+    daemons.start()
+    return HttpResponse('ok')
 
 
 def new_record(request):
@@ -54,7 +58,7 @@ def new_record(request):
         the_user = Users.objects.get(username=request.GET['username'])
     except Users.DoesNotExist:
         return JsonResponse({'response': 'denied'})
-    if request.GET['token'] != the_user.token:    
+    if request.GET['token'] != the_user.token:
         return JsonResponse({"response": "denied"})
     answer = {"response": "ok"}
     try:
@@ -75,17 +79,15 @@ def new_record(request):
                    "status": order.status}
         records.append(tmp_rec)
     answer["orders"] = records
-    if get_config('grab_management') == '0':
-        grab_manager = GrabManager()
-        grab_manager.start()
-    if get_config('attacking') == '0':
-        atk = Attacking()
-        atk.start()
-    if get_config('checking_ftp') == '0':
-        check = CheckFtp()
-        check.start()
+    logging('new_record', 'new record')
     return JsonResponse(answer)
 
 
 def check_connect(request):
+    return HttpResponse('ok')
+
+
+def tester(request):
+    test = Tester()
+    test.start()
     return HttpResponse('ok')

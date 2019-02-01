@@ -1,13 +1,14 @@
 import os
 import json
 import requests
+import threading
 from time import sleep
 from datetime import date
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from core.attack import Attacking
 from .models.Stack import Stack
 from .models.Templates import Templates
-#from .models.Configs import VpnFiles
+from .models.Configs import VpnFiles
 from core.daemon import get_config, personal_logging, logging
 from core.checker import CheckFtp
 from users.models.Users import Users
@@ -129,31 +130,49 @@ def get_templates(request):
 
 
 def add_vpn_to_bd(request):
-    pass
-#    vpn_files = os.listdir('nord_vpn')
-#    for fl in vpn_files:
-#        if not VpnFiles.objects.filter(name=fl).exists():
-#            vpn = VpnFiles()
-#            vpn.name = fl
-#            vpn.path = os.path.join('nord_vpn', fl)
-#            vpn.save()
-#            del vpn
-#            print('add')
-#    return JsonResponse({"response": "ok"})
+    vpn_files = os.listdir('nord_vpn')
+    for fl in vpn_files:
+        if not VpnFiles.objects.filter(name=fl).exists():
+            vpn = VpnFiles()
+            vpn.name = fl
+            vpn.path = os.path.join('nord_vpn', fl)
+            vpn.save()
+            del vpn
+    return JsonResponse({"response": "ok"})
 
 
 def check_ip(request):
     result = True
-    if json.loads(requests.get('https://www.iplocate.io/api/lookup/' +
-                               requests.get('https://api.ipify.org').text).text)['country_code'] != 'KZ':
-        return result
+    ip = requests.get('https://api.ipify.org').text
+    country = json.loads(requests.get('https://www.iplocate.io/api/lookup/' + ip).text)['country_code']
+    if country != 'KZ':
+        return HttpResponse(str(result))
     else:
-        result = False
-        vpn = VpnFiles.objects.order_by('?').first()
-        script = 'openvpn --configure {0}'.format(vpn.path)
-        os.system("bash -c '%s'" % script)
-        sleep(15)
-        if json.loads(requests.get('https://www.iplocate.io/api/lookup/' +
-                                   requests.get('https://api.ipify.org').text).text)['country_code'] == 'KZ':
-            result = True
-        return result
+        while True:
+            result = False
+            vpn = VpnFiles.objects.order_by('?').first()
+
+            # vpn_master = VpnMaster()
+            # vpn_master.start(vpn.name)
+            vpn_name = os.path.join('nord_vpn', vpn.name)
+            t = threading.Thread(target=check_vpn, args=(vpn_name,))
+            t.start()
+            print('ip: ' + os.getcwd())
+            sleep(15)
+            ip = requests.get('https://api.ipify.org').text
+            country = json.loads(requests.get('https://www.iplocate.io/api/lookup/' + ip).text)['country_code']
+            if country != 'KZ':
+                result = True
+                break
+        return HttpResponse(str(result))
+
+
+def check_vpn(vpn_name):
+    print(vpn_name)
+    script = 'sudo openvpn {0}'.format(vpn_name)
+    print('script: ' + script)
+    print('vpn: ' + os.getcwd())
+    print(os.system("bash -c '%s'" % script))
+    # sleep(3)
+    # print(os.system("bash -c '%s'" % '1322'))
+    return

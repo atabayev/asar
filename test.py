@@ -1,27 +1,28 @@
-import json
 import os
-import requests
-from time import sleep
 
 
-def check_ip():
-    result = True
-    if json.loads(requests.get('https://www.iplocate.io/api/lookup/' +
-                               requests.get('https://api.ipify.org').text).text)['country_code'] == 'KZ':
-        return result
+def get_conf(key):
+    if not os.path.exists('serv_cfg'):
+        return '0'
+    with open('serv_cfg', 'r') as fl:
+        for line in fl:
+            k, v = line.split()
+            if k == key:
+                return v
+    return '0'
+
+
+def save_conf(key, value):
+    if not os.path.exists('serv_cfg'):
+        with open('serv_cfg', 'w') as fl:
+            fl.write(key + ' ' + value)
     else:
-        result = False
-        try:
-            config_files = os.listdir('VPN_configs')
-        except FileNotFoundError:
-            print('check_ip', 'Нет файлов конфигураций для VPN')
-            return False
-        for config_file in config_files:
-            script = 'openvpn --configure {0}'.format(config_file)
-            os.system("bash -c '%s'" % script)
-            sleep(15)
-            if json.loads(requests.get('https://www.iplocate.io/api/lookup/' +
-                                       requests.get('https://api.ipify.org').text).text)['country_code'] == 'KZ':
-                result = True
-                break
-        return result
+        with open('serv_cfg', 'r') as fl:
+            for line in fl:
+                res = fl.read()
+        ind = res.find(key)
+
+
+
+
+get_conf('grab')

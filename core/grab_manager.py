@@ -1,7 +1,7 @@
 import os
 import shutil
 from threading import Thread
-from core.daemon import get_config, set_config
+from core.daemon import get_config, set_config, logging
 from datetime import datetime
 from core.grabber import Grabbing
 from time import sleep
@@ -19,10 +19,12 @@ class GrabManager(Thread):
         Thread.__init__(self)
 
     def run(self):
+        logging('GrabManager', 'run...')
         grab_managing()
 
 
 def grab_managing():
+    logging('GrabManager', 'START')
     if get_config('grab_management') == '1':
         return
     set_config('grab_management', '1')
