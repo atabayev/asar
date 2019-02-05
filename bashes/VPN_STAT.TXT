@@ -1,0 +1,69 @@
+Tue Feb  5 04:13:53 2019 WARNING: file '/home/asar/www/asar/cfg' is group or others accessible
+Tue Feb  5 04:13:53 2019 OpenVPN 2.4.4 x86_64-pc-linux-gnu [SSL (OpenSSL)] [LZO] [LZ4] [EPOLL] [PKCS11] [MH/PKTINFO] [AEAD] built on Sep  5 2018
+Tue Feb  5 04:13:53 2019 library versions: OpenSSL 1.1.0g  2 Nov 2017, LZO 2.08
+Tue Feb  5 04:13:53 2019 WARNING: --ping should normally be used with --ping-restart or --ping-exit
+Tue Feb  5 04:13:53 2019 NOTE: --fast-io is disabled since we are not using UDP
+Tue Feb  5 04:13:53 2019 Outgoing Control Channel Authentication: Using 512 bit message hash 'SHA512' for HMAC authentication
+Tue Feb  5 04:13:53 2019 Incoming Control Channel Authentication: Using 512 bit message hash 'SHA512' for HMAC authentication
+Tue Feb  5 04:13:53 2019 TCP/UDP: Preserving recently used remote address: [AF_INET]185.245.87.43:443
+Tue Feb  5 04:13:53 2019 Socket Buffers: R=[87380->87380] S=[87380->87380]
+Tue Feb  5 04:13:53 2019 Attempting to establish TCP connection with [AF_INET]185.245.87.43:443 [nonblock]
+Tue Feb  5 04:13:54 2019 TCP connection established with [AF_INET]185.245.87.43:443
+Tue Feb  5 04:13:54 2019 TCP_CLIENT link local: (not bound)
+Tue Feb  5 04:13:54 2019 TCP_CLIENT link remote: [AF_INET]185.245.87.43:443
+Tue Feb  5 04:13:54 2019 TLS: Initial packet from [AF_INET]185.245.87.43:443, sid=281a5865 9c06d593
+Tue Feb  5 04:13:54 2019 WARNING: this configuration may cache passwords in memory -- use the auth-nocache option to prevent this
+Tue Feb  5 04:13:55 2019 VERIFY OK: depth=2, C=PA, O=NordVPN, CN=NordVPN Root CA
+Tue Feb  5 04:13:55 2019 VERIFY OK: depth=1, C=PA, O=NordVPN, CN=NordVPN CA3
+Tue Feb  5 04:13:55 2019 VERIFY KU OK
+Tue Feb  5 04:13:55 2019 Validating certificate extended key usage
+Tue Feb  5 04:13:55 2019 ++ Certificate has EKU (str) TLS Web Server Authentication, expects TLS Web Server Authentication
+Tue Feb  5 04:13:55 2019 VERIFY EKU OK
+Tue Feb  5 04:13:55 2019 VERIFY OK: depth=0, CN=us2509.nordvpn.com
+Tue Feb  5 04:13:56 2019 Control Channel: TLSv1.2, cipher TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384, 2048 bit RSA
+Tue Feb  5 04:13:56 2019 [us2509.nordvpn.com] Peer Connection Initiated with [AF_INET]185.245.87.43:443
+Tue Feb  5 04:13:57 2019 SENT CONTROL [us2509.nordvpn.com]: 'PUSH_REQUEST' (status=1)
+Tue Feb  5 04:13:58 2019 PUSH: Received control message: 'PUSH_REPLY,redirect-gateway def1,dhcp-option DNS 103.86.96.100,dhcp-option DNS 103.86.99.100,sndbuf 524288,rcvbuf 524288,explicit-exit-notify,comp-lzo no,route-gateway 10.7.7.1,topology subnet,ping 60,ping-restart 180,ifconfig 10.7.7.4 255.255.255.0,peer-id 0,cipher AES-256-GCM'
+Tue Feb  5 04:13:58 2019 Option 'explicit-exit-notify' in [PUSH-OPTIONS]:6 is ignored by previous <connection> blocks 
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: timers and/or timeouts modified
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: --explicit-exit-notify can only be used with --proto udp
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: compression parms modified
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: --sndbuf/--rcvbuf options modified
+Tue Feb  5 04:13:58 2019 Socket Buffers: R=[374400->1048576] S=[87380->1048576]
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: --ifconfig/up options modified
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: route options modified
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: route-related options modified
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: --ip-win32 and/or --dhcp-option options modified
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: peer-id set
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: adjusting link_mtu to 1659
+Tue Feb  5 04:13:58 2019 OPTIONS IMPORT: data channel crypto options modified
+Tue Feb  5 04:13:58 2019 Data Channel: using negotiated cipher 'AES-256-GCM'
+Tue Feb  5 04:13:58 2019 Outgoing Data Channel: Cipher 'AES-256-GCM' initialized with 256 bit key
+Tue Feb  5 04:13:58 2019 Incoming Data Channel: Cipher 'AES-256-GCM' initialized with 256 bit key
+Tue Feb  5 04:13:58 2019 ROUTE_GATEWAY 192.168.1.1/255.255.255.0 IFACE=enp0s31f6 HWADDR=10:7b:44:18:c9:25
+Tue Feb  5 04:13:58 2019 TUN/TAP device tun0 opened
+Tue Feb  5 04:13:58 2019 TUN/TAP TX queue length set to 100
+Tue Feb  5 04:13:58 2019 do_ifconfig, tt->did_ifconfig_ipv6_setup=0
+Tue Feb  5 04:13:58 2019 /sbin/ip link set dev tun0 up mtu 1500
+Tue Feb  5 04:13:58 2019 /sbin/ip addr add dev tun0 10.7.7.4/24 broadcast 10.7.7.255
+Tue Feb  5 04:13:58 2019 /sbin/ip route add 185.245.87.43/32 via 192.168.1.1
+Tue Feb  5 04:13:58 2019 /sbin/ip route add 0.0.0.0/1 via 10.7.7.1
+Tue Feb  5 04:13:58 2019 /sbin/ip route add 128.0.0.0/1 via 10.7.7.1
+Tue Feb  5 04:13:58 2019 Initialization Sequence Completed
+Tue Feb  5 05:13:58 2019 VERIFY OK: depth=2, C=PA, O=NordVPN, CN=NordVPN Root CA
+Tue Feb  5 05:13:58 2019 VERIFY OK: depth=1, C=PA, O=NordVPN, CN=NordVPN CA3
+Tue Feb  5 05:13:58 2019 VERIFY KU OK
+Tue Feb  5 05:13:58 2019 Validating certificate extended key usage
+Tue Feb  5 05:13:58 2019 ++ Certificate has EKU (str) TLS Web Server Authentication, expects TLS Web Server Authentication
+Tue Feb  5 05:13:58 2019 VERIFY EKU OK
+Tue Feb  5 05:13:58 2019 VERIFY OK: depth=0, CN=us2509.nordvpn.com
+Tue Feb  5 05:14:00 2019 Outgoing Data Channel: Cipher 'AES-256-GCM' initialized with 256 bit key
+Tue Feb  5 05:14:00 2019 Incoming Data Channel: Cipher 'AES-256-GCM' initialized with 256 bit key
+Tue Feb  5 05:14:00 2019 Control Channel: TLSv1.2, cipher TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384, 2048 bit RSA
+Tue Feb  5 05:26:31 2019 event_wait : Interrupted system call (code=4)
+Tue Feb  5 05:26:31 2019 /sbin/ip route del 185.245.87.43/32
+Tue Feb  5 05:26:31 2019 /sbin/ip route del 0.0.0.0/1
+Tue Feb  5 05:26:31 2019 /sbin/ip route del 128.0.0.0/1
+Tue Feb  5 05:26:31 2019 Closing TUN/TAP interface
+Tue Feb  5 05:26:31 2019 /sbin/ip addr del dev tun0 10.7.7.4/24
+Tue Feb  5 05:26:31 2019 SIGTERM[hard,] received, process exiting
