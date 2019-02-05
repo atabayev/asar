@@ -2,7 +2,6 @@ from django.http import JsonResponse, HttpResponse
 from manager.models.Stack import Stack
 from core.daemon import logging
 from core.start_daemons import StartDaemons
-from core.tester import Tester
 from users.models.Users import Users
 
 
@@ -86,8 +85,3 @@ def new_record(request):
 def check_connect(request):
     return HttpResponse('ok')
 
-
-def tester(request):
-    test = Tester()
-    test.start()
-    return HttpResponse('ok')

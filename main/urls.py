@@ -8,6 +8,5 @@ urlpatterns = [
     path('new/', views.new_record, name='new'),
     path('check/', views.check_connect, name='check'),
     path('start_daemons/', views.start_daemons, name='start_daemons'),
-    path('tester/', views.tester, name='tester'),
 ]
 
