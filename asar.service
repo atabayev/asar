@@ -1,0 +1,11 @@
+[Unit]
+Description=uWSGI instance to server asar
+After=network.target
+[Service]
+User=asar
+Group=www-data
+WorkingDirectory=/home/asar/www/asar
+Environment="PATH=/home/asar/www/asar/venv/bin"
+ExecStart=/home/asar/www/asar/venv/bin/uwsgi --ini asar_uwsgi.ini
+[Install]
+WantedBy=multi-user.target
