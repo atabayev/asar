@@ -8,5 +8,5 @@ then
 fi
 sleep 10s
 geoiplookup $(wget -O - -q icanhazip.com) > /home/asar/www/asar/bashes/MYIP.TXT
-
-
+sleep 10s
+/usr/bin/python3 /home/asar/www/asar/daemons/vpn_manager.py

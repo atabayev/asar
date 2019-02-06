@@ -2,9 +2,6 @@ import os
 import sys
 from threading import Thread
 from time import sleep
-import subprocess
-import requests
-import json
 from core.daemon import get_config, set_config, logging
 
 

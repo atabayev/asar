@@ -1,12 +1,9 @@
-import os
-import json
-import random
 import hashlib
-import requests
-import subprocess
-from time import sleep
+import os
+import random
 from datetime import datetime
-from manager.models.Configs import Configs, VpnFiles
+
+from manager.models.Configs import Configs
 
 '''
     Дополнительный помощник: записывает логи, проверяет конфиги с БД, шифровнание, генерация токенов.
@@ -95,59 +92,3 @@ def generate_token():
     random_res = random.uniform(1000000, 9999999)
     result = hashlib.md5(str(random_res).encode('utf-8')).hexdigest()
     return result
-
-
-# def check_ip():
-#     logging('>>>>> CHECK_IP', 'start')
-#     log1 = open('info.txt', 'a')
-#     log1.write('\n')
-#     log1.write('---------------------\n')
-#     subprocess.Popen("./info", stdout=log1, stderr=log1, shell=True)
-#     log1.close()
-#     logging('>>>>> CHECK_IP', 'wrote info.txt')
-#     result = True
-#     ip = requests.get('https://api.ipify.org').text
-#     logging('>>>>> CHECK_IP', 'IP: ' + ip)
-#     country = json.loads(requests.get('https://www.iplocate.io/api/lookup/' + ip).text)['country_code']
-#     logging('>>>>> CHECK_IP', 'страна: '+country)
-#     if country != 'KZ':
-#         return result
-#     else:
-#         result = False
-#         if not os.path.exists('VPN_LOG_FILE.txt'):
-#             with open('VPN_LOG_FILE.txt', 'w') as fl:
-#                 fl.write('')
-#         while True:
-#             # vpn = VpnFiles.objects.order_by('?').first()
-#             # vpn_name = os.path.join('nord_vpn', vpn.name)
-#
-#             # proc = Popen('sudo ' + script + ' ' + vpn_name, shell=True, stdout=True)
-#             # print(proc)
-#             # vpn_conn = VpnConnection(vpn_name)
-#             # vpn_conn.start()
-#             # t = threading.Thread(target=check_vpn, args=vpn.name)
-#             # t.start()
-#             logging('>>>>> CHECK_IP', 'страна: ' + country + '. Подключаюсь к VPN')
-#             logging('>>>>> CHECK_IP', os.getcwd())
-#             log = open('VPN_LOG_FILE.txt', 'a')
-#             log.write(' ----------------------------------------------------------------------- ')
-#             log.write(' ----------------------------------------------------------------------- ')
-#             subprocess.Popen("./start_vpn", stdout=log, stderr=log)
-#             sleep(10)
-#             log.close()
-#             ip = requests.get('https://api.ipify.org').text
-#             country = json.loads(requests.get('https://www.iplocate.io/api/lookup/' + ip).text)['country_code']
-#             logging('check_ip', 'После плделючения к VPN, страна: ' + country)
-#             print(country)
-#             if country != 'KZ':
-#                 result = True
-#                 # del vpn
-#                 break
-#             # del vpn
-#         return result
-#
-#
-# def check_vpn(vpn_name):
-#     sc = 'sudo -s openvpn {0}'.format(os.path.join('nord_vpn', vpn_name))
-#     os.system("bash -c '%s'" % sc)
-#     return
