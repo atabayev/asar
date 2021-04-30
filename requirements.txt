@@ -14,6 +14,6 @@ psycopg2-binary==2.7.6.1
 pytz==2018.7
 redis==3.0.1
 requests==2.21.0
-urllib3==1.25.6
+urllib3==1.25.8
 uWSGI==2.0.17.1
 vine==1.2.0
